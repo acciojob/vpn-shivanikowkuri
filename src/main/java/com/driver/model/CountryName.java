@@ -16,11 +16,5 @@ public enum CountryName {
     public String toCode() {
         return this.code;
     }
-    public static CountryName valueOfCode(String code) {
-        for (CountryName countryName : values())
-            if (countryName.code.equals(code))
-                return countryName;
-
-        return null;
-    }
+   
 }
