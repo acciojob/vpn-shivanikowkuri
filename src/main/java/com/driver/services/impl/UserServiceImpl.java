@@ -11,8 +11,6 @@ import com.driver.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static com.driver.model.CountryName.*;
-
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -25,26 +23,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User register(String username, String password, String countryName) throws Exception{
-        //create a user of given country.
-        // The originalIp of the user should be "countryCode.userId" and return the user.
-        // Note that right now user is not connected and thus connected would be false and maskedIp would be null
-        //Note that the userId is created automatically by the repository layer
-        Country country = new Country();
+        boolean isPresent=false;
 
-        try {
-            country.setCountryName(CountryName.valueOf(countryName.toUpperCase()));
-            country.setCode(country.getCountryName().toCode());
+        String CountryNameInUpperCase= countryName.toUpperCase();
+
+        for(CountryName countryName1:CountryName.values()){
+            if(countryName1.toString().equals(CountryNameInUpperCase)){
+                isPresent=true;
+            }
         }
-        catch (IllegalArgumentException ignored) {
+        if(!isPresent){
             throw new Exception("Country not found");
         }
+        Country country=new Country();
+        country.setCountryName(CountryName.valueOf(CountryNameInUpperCase));
+        country.setCode(CountryName.valueOf(CountryNameInUpperCase).toCode());
 
-        User user = new User();
+        User user=new User();
         user.setUsername(username);
         user.setPassword(password);
         user.setOriginalCountry(country);
-        user.setOriginalIp(country.getCode() + "." + user.getId());
-
+        user.setConnected(false);
+        country.setUser(user);
+        user.setOriginalIp(country.getCode()+"."+user.getId());
         userRepository3.save(user);
 
         return user;
@@ -52,11 +53,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User subscribe(Integer userId, Integer serviceProviderId) {
-        //subscribe to the serviceProvider by adding it to the list of providers and return updated User
-        ServiceProvider serviceProvider=serviceProviderRepository3.findById(serviceProviderId).get();
         User user=userRepository3.findById(userId).get();
+        ServiceProvider serviceProvider=serviceProviderRepository3.findById(serviceProviderId).get();
+
         user.getServiceProviderList().add(serviceProvider);
         serviceProvider.getUsers().add(user);
+
         serviceProviderRepository3.save(serviceProvider);
         return user;
     }
